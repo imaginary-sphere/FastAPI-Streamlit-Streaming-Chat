@@ -3,7 +3,8 @@ import json
 from typing import List, Literal, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import StreamingResponse
+from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
@@ -14,10 +15,12 @@ app = FastAPI(title="Streaming Chat API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:8501", "http://127.0.0.1:8501"],
+    allow_origins=["*"],
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 AVAILABLE_MODELS = ["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"]
 
@@ -36,8 +39,8 @@ class ChatRequest(BaseModel):
 
 
 @app.get("/")
-async def health():
-    return {"status": "ok", "message": "Streaming Chat API is running"}
+async def index():
+    return FileResponse("static/index.html")
 
 
 @app.get("/models")
