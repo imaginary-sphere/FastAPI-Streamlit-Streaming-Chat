@@ -35,6 +35,11 @@ class ChatRequest(BaseModel):
     # api_key: Optional[str] — removed from request body; key is read from OPENAI_API_KEY in backend/.env
 
 
+@app.get("/")
+async def health():
+    return {"status": "ok", "message": "Streaming Chat API is running"}
+
+
 @app.get("/models")
 async def list_models():
     return {"models": AVAILABLE_MODELS}
