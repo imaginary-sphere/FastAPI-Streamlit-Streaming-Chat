@@ -1,7 +1,7 @@
 # Never commit secrets or virtual envs
-backend/.env
-backend/.venv/
-frontend/.venv/
+app/.env
+app/.venv/
+.venv/
 __pycache__/
 *.pyc
 .DS_Store
