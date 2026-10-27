@@ -1,11 +1,11 @@
 import os
 import json
-from typing import List, Optional
+from typing import List, Literal, Optional
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from openai import AsyncOpenAI
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -23,14 +23,16 @@ AVAILABLE_MODELS = ["gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"]
 
 
 class Message(BaseModel):
-    role: str        # "user" or "assistant"
+    role: Literal["user", "assistant", "system", "tool", "developer"]
     content: str
 
 
 class ChatRequest(BaseModel):
-    messages: List[Message]
+    messages: List[Message] = Field(
+        examples=[[{"role": "user", "content": "Hello!"}]]
+    )
     model: str = "gpt-4o"
-    api_key: Optional[str] = None
+    # api_key: Optional[str] — removed from request body; key is read from OPENAI_API_KEY in backend/.env
 
 
 @app.get("/models")
@@ -40,7 +42,7 @@ async def list_models():
 
 @app.post("/chat")
 async def chat(body: ChatRequest):
-    api_key = body.api_key or os.getenv("OPENAI_API_KEY")
+    api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise HTTPException(
             status_code=400,

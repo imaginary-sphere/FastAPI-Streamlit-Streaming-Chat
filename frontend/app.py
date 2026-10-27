@@ -3,7 +3,7 @@ import os
 import requests
 import streamlit as st
 
-API_BASE = "http://localhost:8000"
+API_BASE = os.getenv("BACKEND_URL", "http://localhost:8000")
 
 # ── Page config ──────────────────────────────────────────────────────────────
 st.set_page_config(page_title="AI Chat", page_icon="💬", layout="wide")
@@ -11,14 +11,6 @@ st.set_page_config(page_title="AI Chat", page_icon="💬", layout="wide")
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.title("⚙️ Settings")
-
-    api_key = st.text_input(
-        "OpenAI API Key",
-        type="password",
-        value=os.getenv("OPENAI_API_KEY", ""),
-        placeholder="sk-...",
-        help="Your key is never stored — it's sent directly to the API per request.",
-    )
 
     # Fetch model list from backend; fall back to defaults if backend is offline
     try:
@@ -33,7 +25,7 @@ with st.sidebar:
         st.rerun()
 
     st.divider()
-    st.caption("Backend: `uvicorn main:app --reload --port 8000`")
+    st.caption(f"Backend: `{API_BASE}`")
 
 # ── Session state ─────────────────────────────────────────────────────────────
 if "messages" not in st.session_state:
@@ -45,10 +37,7 @@ for msg in st.session_state.messages:
         st.markdown(msg["content"])
 
 # ── Chat input ────────────────────────────────────────────────────────────────
-user_input = st.chat_input(
-    "Message AI..." if api_key else "Enter your API key in the sidebar first",
-    disabled=not api_key,
-)
+user_input = st.chat_input("Message AI...")
 
 if user_input:
     # Display user message
@@ -68,7 +57,7 @@ if user_input:
         try:
             resp = requests.post(
                 f"{API_BASE}/chat",
-                json={"messages": history, "model": model, "api_key": api_key},
+                json={"messages": history, "model": model},
                 stream=True,
                 timeout=60,
             )
