@@ -213,14 +213,21 @@
   let history = [];
   let streaming = false;
 
-  // Load models
-  fetch('/models').then(r => r.json()).then(data => {
-    data.models.forEach(m => {
+  // Load models with fallback
+  const DEFAULT_MODELS = ['gpt-4o', 'gpt-4o-mini', 'gpt-3.5-turbo'];
+  function populateModels(models) {
+    modelSelect.innerHTML = '';
+    models.forEach(m => {
       const opt = document.createElement('option');
       opt.value = opt.textContent = m;
       modelSelect.appendChild(opt);
     });
-  });
+  }
+  populateModels(DEFAULT_MODELS);
+  fetch('/models')
+    .then(r => r.json())
+    .then(data => populateModels(data.models))
+    .catch(() => {});
 
   // Auto-resize textarea
   inputEl.addEventListener('input', () => {
@@ -286,6 +293,17 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages: history, model: modelSelect.value }),
       });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({ detail: resp.statusText }));
+        fullText = `⚠️ ${err.detail || resp.statusText}`;
+        cursor.remove();
+        bubble.textContent = fullText;
+        history.push({ role: 'assistant', content: fullText });
+        streaming = false;
+        sendBtn.disabled = false;
+        return;
+      }
 
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
